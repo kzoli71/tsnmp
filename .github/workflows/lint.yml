@@ -1,0 +1,37 @@
+name: lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The linters run on a newer Go than go.mod's 1.24; they still honor the
+      # go.mod language version. The build workflow checks Go 1.24 itself.
+      # Keep Go in step with the linters: gosec v2.29.0 cannot read the export
+      # data of Go 1.27 yet.
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+
+      - name: Install linters
+        run: |
+          go install honnef.co/go/tools/cmd/staticcheck@v0.8.2
+          go install github.com/securego/gosec/v2/cmd/gosec@v2.29.0
+
+      - name: Staticcheck
+        run: staticcheck ./...
+
+      # G115 (integer conversion overflow) is excluded: the flagged conversions
+      # are deliberate SNMP truncations (TimeTicks, Counter32) or bounded values.
+      - name: Gosec
+        run: gosec -exclude=G115 ./...

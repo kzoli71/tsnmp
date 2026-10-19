@@ -1,0 +1,47 @@
+# Release build, run by .github/workflows/release.yml on a v* tag.
+version: 2
+
+project_name: tsnmp
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos: [linux, windows]
+    goarch: [amd64]
+    flags: [-trimpath]
+    # No -s -w: a stripped exe is more likely flagged by antivirus heuristics.
+    # The Windows icon and version info come from resource_windows_*.syso.
+    ldflags:
+      - -X main.version={{ .Version }}
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+archives:
+  - formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - LICENSE
+      - THIRD_PARTY_LICENSES.txt
+      - Readme.md
+      - Readme.hu.md
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  use: git
+  sort: asc
+  filters:
+    exclude:
+      - "^Merge "
+
+release:
+  github:
+    owner: kzoli71
+    name: tsnmp
+  # The Windows exe is signed afterwards by hand (sign-release, kept outside
+  # this repository), which also publishes the release.
+  draft: true
+  replace_existing_draft: true
