@@ -32,15 +32,15 @@ jobs:
         run: go test -race ./...
 
       # Static binaries; -trimpath and no -ldflags="-s -w": a stripped exe
-      # is more likely flagged by antivirus heuristics (see Readme).
+      # is more likely flagged by antivirus heuristics (see DEVELOPMENT.md).
       - name: Build
         env:
           CGO_ENABLED: "0"
         run: |
           GOOS=linux GOARCH=amd64 go build -trimpath -o dist/linux-amd64/tsnmp .
           GOOS=windows GOARCH=amd64 go build -trimpath -o dist/windows-amd64/tsnmp.exe .
-          cp LICENSE THIRD_PARTY_LICENSES.txt Readme.md Readme.hu.md dist/linux-amd64/
-          cp LICENSE THIRD_PARTY_LICENSES.txt Readme.md Readme.hu.md dist/windows-amd64/
+          cp LICENSE THIRD_PARTY_LICENSES.txt README.md README.hu.md dist/linux-amd64/
+          cp LICENSE THIRD_PARTY_LICENSES.txt README.md README.hu.md dist/windows-amd64/
 
       - uses: actions/upload-artifact@v4
         with:

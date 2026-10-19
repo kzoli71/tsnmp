@@ -1,6 +1,6 @@
 # AGENTS.md
 
-SNMPv2c / SNMPv3 interface traffic monitor with a TUI (Go, tview/tcell, gosnmp). It must run on both Linux and Windows 10+ / Server 2016+ (the minimum of Go 1.21+). The program's interface (all user-facing text, error messages, help) and `Readme.md` are in English; new text may only be added in English. The only exception is `Readme.hu.md`, the Hungarian translation of `Readme.md`: keep the two in sync when either changes.
+SNMPv2c / SNMPv3 interface traffic monitor with a TUI (Go, tview/tcell, gosnmp). It must run on both Linux and Windows 10+ / Server 2016+ (the minimum of Go 1.21+). The program's interface (all user-facing text, error messages, help) and `README.md` are in English; new text may only be added in English. The only exception is `README.hu.md`, the Hungarian translation of `README.md`: keep the two in sync when either changes. `README.md` is for users; build, test, CI, Windows resource, license generation and release/signing notes go in `DEVELOPMENT.md` (English only).
 
 ## Commands
 
@@ -40,7 +40,7 @@ The machine has Go 1.26. `go.mod` requires Go 1.24, the minimum of the current t
 - `tools/licenses`: generates `THIRD_PARTY_LICENSES.txt` (stdlib only): the modules of `go list -deps .` for linux + windows amd64, their LICENSE/LICENCE/COPYING (+ NOTICE, PATENTS) files, SPDX detected from the text; only MIT, BSD-2/3-Clause, ISC, Apache-2.0, MPL-2.0 are accepted, anything else or a missing file is an error. The Go license comes from `GOROOT/LICENSE`, or a built-in copy if the Go installation has none (Ubuntu's). Texts are normalized (LF, no trailing spaces), so the check works on Windows too. `TestThirdPartyLicenses` checks that every `go.mod` require is listed.
 - `ui_main.go`: table (filters, `sortModes`, search); `ui_graph.go`: custom braille line chart; `format.go`: formatting helpers (including `naturalLess`).
 - `winres.go`, `versioninfo.json`, `tsnmp.exe.manifest`, `resource_windows_*.syso`: Windows version info, manifest and icon (`IconPath`: `assets/tsnmp.ico`) (against Defender's ML-based false positive, `Wacatac.B!ml`). The `.syso` files are committed; `goversioninfo` runs only via `go run` and is not in `go.mod`. Do not use `-ldflags="-s -w"`.
-- `assets/`: logo (`logo.svg`, text converted to paths) and icon (`icon.svg`; `icon-small.svg` is a simplified drawing for 16–32 px; `tsnmp.ico` holds 16–256 px). Not MIT licensed (see `Readme.md`).
+- `assets/`: logo (`logo.svg`, text converted to paths) and icon (`icon.svg`; `icon-small.svg` is a simplified drawing for 16–32 px; `tsnmp.ico` holds 16–256 px). Not MIT licensed (see `README.md`).
 - `internal/usm`: v3 protocol names (`AuthNames`/`PrivNames`, in the order of the gosnmp constants) and their parsing; used by both tsnmp and the fakeagent.
 - `internal/fakeagent`: test agent package (v2c, and with `Options.V3` SNMPv3 at the same time; `v3.go`: its own USM layer, decoding/authenticating/encrypting with gosnmp) (`snmp_test.go` also starts it on a random port); `tools/fakeagent` is just its command-line wrapper.
 

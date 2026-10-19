@@ -10,7 +10,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="licenc: MIT"></a>
 </p>
 
-<p align="center"><a href="Readme.md">English</a> | <b>Magyar</b></p>
+<p align="center"><a href="README.md">English</a> | <b>Magyar</b></p>
 
 # tsnmp – SNMP interfész-forgalomfigyelő
 
@@ -22,78 +22,31 @@ Linuxon és Windows 10-en vagy újabbon fut, beleértve a Windows Server 2016-ot
 <p align="center"><img src="assets/screenshot-main.png" alt="tsnmp főképernyő: interfésztáblázat" width="984"></p>
 <p align="center"><img src="assets/screenshot-graph.png" alt="tsnmp forgalmi grafikon" width="984"></p>
 
+## Főbb képességek
+
+- Egy táblázatban az eszköz összes interfésze: In/Out bit/s, In/Out csomag/s és a
+  kihasználtság az interfész sebességéhez képest, szűréssel, kereséssel és rendezéssel.
+- SNMPv2c és SNMPv3 (MD5, SHA-1 és SHA-2 hitelesítés; DES és AES-128/192/256 titkosítás,
+  a Blumenthal- és a Reeder-féle kulcskiterjesztéssel is; context nevek), érthető SNMPv3
+  hibaüzenetekkel.
+- 64 bites `ifHC*` számlálók, interfészenként automatikus visszaváltással a 32 bites
+  `ifTable` számlálókra (átfordulás-kezeléssel).
+- A forgalmi értékek az eszköz saját `sysUpTime` értékéből számolódnak, így a hálózati
+  késleltetés és az újrapróbálkozások nem torzítják őket.
+- Nincsenek hamis tüskék az eszköz újraindulása, a számlálók nullázása
+  (`ifCounterDiscontinuityTime`) vagy egy valószínűtlen 32 bites átfordulás után.
+- Interfészenkénti forgalmi grafikon a terminálban, a teljes mérési előzmény
+  visszagörgetésével, nagyítással (átlagolással), minimum- és maximumértékekkel.
+- Hatékony lekérdezés: GetBulk kérések, 1–300 s lekérdezési időköz.
+- Egyetlen statikus bináris Linuxra és Windowsra, telepítés nélkül; a Windows exe
+  kódaláírt.
+
 ## Letöltés
 
 Kész Linux és Windows (amd64) binárisok a
 [Releases](https://github.com/kzoli71/tsnmp/releases) oldalon találhatók, a
-`checksums.txt` (SHA-256) fájllal együtt. A `tsnmp -version` kiírja a program verzióját.
-
-## Fordítás
-
-Go 1.24 vagy újabb szükséges.
-
-```sh
-go build -trimpath -o tsnmp .                                  # Linux
-GOOS=windows GOARCH=amd64 go build -trimpath -o tsnmp.exe .    # Windows (keresztfordítás)
-go test ./...
-```
-
-A GitHub Actions (`.github/workflows/build.yml`) a `main` ágra történő minden pushnál
-lefuttatja a teszteket, és elkészíti a Linux és Windows amd64 binárisokat; ezek a
-futás „Artifacts” részéből tölthetők le.
-Egy második workflow (`.github/workflows/lint.yml`) a `staticcheck` és a `gosec`
-eszközt futtatja, a program fordításához használtnál újabb Go-val (1.26).
-Egy `v*` tag (pl. `v1.0.1`) pusholása elindítja a `.github/workflows/release.yml`
-workflow-t: az ellenőrzések után a [GoReleaser](https://goreleaser.com/)
-(`.goreleaser.yaml`) elkészíti a kiadási archívumokat, az ellenőrzőösszegeket és a
-változásnaplót, majd feltölti őket egy piszkozat (draft) GitHub release-be. Tagelés
-előtt frissítsd a verziót a `versioninfo.json` fájlban, és futtasd a `go generate`
-parancsot.
-
-A Windows exe-t a release közzététele előtt Authenticode-dal aláírjuk egy Certum
-SimplySign (felhős) kódaláíró tanúsítvánnyal, kézzel, a karbantartó gépén, a
-`sign-release` szkripttel, amely ezen a repón kívül, külön van tárolva
-(`kzoli71/sign-release`). Letölti a piszkozatból a Windows zipet, aláírja a
-`tsnmp.exe`-t az [ssign](https://github.com/Le-Syl21/ssign) eszközzel (időbélyeggel a
-`time.certum.pl`-től), az `osslsigncode`-dal ellenőrzi az aláírást, feltölti az
-újracsomagolt zipet és a frissített `checksums.txt`-t, majd megerősítés után
-közzéteszi a release-t. A SimplySign mobilalkalmazás aktuális 6 jegyű kódját
-rejtett bevitellel kéri be:
-
-```sh
-CERTUM_EMAIL=te@example.com sign-release -R kzoli71/tsnmp \
-    -a 'tsnmp_{version}_windows_amd64.zip' v1.0.1
-```
-
-A Windows exe-be verzióinformáció, manifest és a program ikonja kerül beágyazásra
-(`versioninfo.json`, `tsnmp.exe.manifest`, `assets/tsnmp.ico` →
-`resource_windows_*.syso`). Verzióinformáció és manifest nélkül a Defender nagyobb
-eséllyel jelez téves riasztást (pl. `Trojan:Win32/Wacatac.B!ml`). Ezen fájlok
-bármelyikének módosítása után újra kell generálni: `go generate`. Ne használd a
-`-ldflags="-s -w"` kapcsolót: a strippelt exe gyanúsabbnak tűnik a víruskeresők számára.
-
-### Tesztelés valódi eszköz nélkül
-
-```sh
-go run ./tools/fakeagent            # szimulált SNMP agent: 127.0.0.1:16161, community "public"
-./tsnmp 127.0.0.1:16161             # vagy cím nélkül, a bejelentkező képernyőn
-./tsnmp -v 3 -u tsnmp -A authpass123 -X privpass123 127.0.0.1:16161   # SNMPv3 (SHA/AES)
-```
-
-Kapcsolók: `-listen`, `-community`, `-extra` (további interfészek száma, alapértelmezés: 50),
-`-delay` (várakozás minden válasz előtt, pl. `50ms`, lassú eszköz szimulálására),
-`-refresh` (a számlálók csak ilyen időközönként változnak, pl. `2s`, mint egy router
-számláló-gyorsítótára), `-hot` (egy 10 Gb/s-os port állandó 85%-os terheléssel), SNMPv3-hoz
-pedig `-user` (alapértelmezés: `tsnmp`; `""` kikapcsolja az SNMPv3-at), `-auth` / `-authpass`
-(alapértelmezés: `SHA` / `authpass123`), `-priv` / `-privpass` (alapértelmezés: `AES` /
-`privpass123`; `-auth none` vagy `-priv none` csökkenti a biztonsági szintet), `-context`
-(az egyetlen elfogadott context név, alapértelmezés: az alapértelmezett context). Az agent
-egyszerre válaszol v2c-n a community-vel és v3-on a felhasználóval, és valódi eszközhöz
-hasonlóan küldi az SNMPv3 hibajelentéseket (ismeretlen felhasználó, hibás jelszó, hibás
-biztonsági szint, ismeretlen context).
-Futás közben a standard bemeneten kiadható parancsok: `reset N` (az N. ifIndex számlálóinak
-nullázása), `reboot` (agent újraindítása), `down` / `up` (kapcsolat megszakad /
-helyreáll), `nodisc` / `disc` (a discovery kérések megválaszolásának leállítása / folytatása).
+`checksums.txt` (SHA-256) fájllal együtt. A Windows exe Authenticode-dal aláírt (Certum
+kódaláíró tanúsítvány). A `tsnmp -version` kiírja a program verzióját.
 
 ## Használat
 
@@ -194,7 +147,7 @@ Bit/s és Packet/s panel (In = zöld, Out = kék, átfedés = sárga), folyamato
 A jelmagyarázat az aktuális érték mellett az ábrázolt időszak minimumát és maximumát is
 mutatja; az `Esc` vagy a jobb kattintás visszavisz a listához.
 
-## Megjegyzések
+## Működés
 
 - A 64 bites `ifHC*` számlálókat használja; ha az eszköz ezeket nem támogatja,
   interfészenként automatikusan a 32 bites `ifTable` számlálókra vált (átfordulás-kezeléssel).
@@ -216,6 +169,19 @@ mutatja; az `Esc` vagy a jobb kattintás visszavisz a listához.
 - Minden mért adat a program futása alatt a memóriában marad, tömör formában
   (mérésenként 20 bájt; 1000 interfész 5 s-os lekérdezéssel naponta kb. 0,35 GB).
 
+## Fordítás forrásból
+
+Go 1.24 vagy újabb szükséges.
+
+```sh
+go build -trimpath -o tsnmp .                                  # Linux
+GOOS=windows GOARCH=amd64 go build -trimpath -o tsnmp.exe .    # Windows (keresztfordítás)
+go test ./...
+```
+
+A valódi eszköz nélküli tesztelés (szimulált SNMP agent), a CI, a Windows-erőforrások és a
+kiadási folyamat leírása a [DEVELOPMENT.md](DEVELOPMENT.md) fájlban található (angolul).
+
 ## Licenc
 
 MIT, lásd [LICENSE](LICENSE).
@@ -227,6 +193,4 @@ Változtatás nélkül felhasználhatók a tsnmp projektre való hivatkozáshoz.
 A tsnmp-be fordított harmadik féltől származó szoftverek (a Go standard könyvtár és a Go
 modulok) licencei a [THIRD_PARTY_LICENSES.txt](THIRD_PARTY_LICENSES.txt) fájlban
 találhatók. A program mindkét szöveget tartalmazza: a `tsnmp -licenses` kiírja őket, a
-súgóban (`F1`) pedig az `l` megjeleníti. A fájl generált: a `go run ./tools/licenses -write`
-újragenerálja, a `go run ./tools/licenses` ellenőrzi, hogy naprakész-e (a CI lefuttatja
-az ellenőrzést).
+súgóban (`F1`) pedig az `l` megjeleníti.

@@ -10,7 +10,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="license: MIT"></a>
 </p>
 
-<p align="center"><b>English</b> | <a href="Readme.hu.md">Magyar</a></p>
+<p align="center"><b>English</b> | <a href="README.hu.md">Magyar</a></p>
 
 # tsnmp – SNMP interface traffic monitor
 
@@ -22,75 +22,31 @@ It runs on Linux and on Windows 10 or later, including Windows Server 2016 and l
 <p align="center"><img src="assets/screenshot-main.png" alt="tsnmp main screen: interface table" width="984"></p>
 <p align="center"><img src="assets/screenshot-graph.png" alt="tsnmp traffic graph" width="984"></p>
 
+## Features
+
+- One table with every interface of the device: In/Out bit/s, In/Out packet/s and
+  utilization relative to the interface speed, with filtering, search and sorting.
+- SNMPv2c and SNMPv3 (MD5, SHA-1 and SHA-2 authentication; DES and AES-128/192/256
+  privacy, with both the Blumenthal and the Reeder key extension; context names),
+  with readable SNMPv3 error messages.
+- 64-bit `ifHC*` counters, with an automatic per-interface fallback to the 32-bit
+  `ifTable` counters (with wrap handling).
+- Rates computed from the device's own `sysUpTime`, so network delay and retries do not
+  distort them.
+- No false spikes after a device restart, a counter reset (`ifCounterDiscontinuityTime`)
+  or an implausible 32-bit wrap.
+- Traffic graph per interface in the terminal, with scrolling through the whole measurement
+  history, zoom (averaging) and minimum / maximum values.
+- Efficient polling: GetBulk requests, poll interval 1–300 s.
+- A single static binary for Linux and Windows, nothing to install; the Windows exe is
+  code-signed.
+
 ## Download
 
 Ready-made binaries for Linux and Windows (amd64) are on the
 [Releases](https://github.com/kzoli71/tsnmp/releases) page, together with
-`checksums.txt` (SHA-256). `tsnmp -version` prints the version of the program.
-
-## Build
-
-Requires Go 1.24+.
-
-```sh
-go build -trimpath -o tsnmp .                                  # Linux
-GOOS=windows GOARCH=amd64 go build -trimpath -o tsnmp.exe .    # Windows (cross-compiled)
-go test ./...
-```
-
-GitHub Actions (`.github/workflows/build.yml`) runs the tests and builds the Linux and
-Windows amd64 binaries on every push to `main`; they can be downloaded from the run's
-"Artifacts" section.
-A second workflow (`.github/workflows/lint.yml`) runs `staticcheck` and `gosec` with a
-newer Go (1.26) than the one the program is built with.
-Pushing a `v*` tag (e.g. `v1.0.1`) runs `.github/workflows/release.yml`: after the
-checks, [GoReleaser](https://goreleaser.com/) (`.goreleaser.yaml`) builds the release
-archives, the checksums and the changelog, and uploads them to a draft GitHub release.
-Before tagging, update the version in `versioninfo.json` and run `go generate`.
-
-The Windows exe is Authenticode-signed with a Certum SimplySign (cloud) code signing
-certificate before the release is published, by hand on the maintainer's machine with
-`sign-release`, a separate script kept outside this repository
-(`kzoli71/sign-release`). It downloads the Windows zip from the draft, signs
-`tsnmp.exe` with [ssign](https://github.com/Le-Syl21/ssign) (with a timestamp from
-`time.certum.pl`), verifies the signature with `osslsigncode`, uploads the re-packed
-zip and the updated `checksums.txt`, and publishes the release after confirmation. It
-asks for the current 6-digit code of the SimplySign mobile app (hidden input):
-
-```sh
-CERTUM_EMAIL=you@example.com sign-release -R kzoli71/tsnmp \
-    -a 'tsnmp_{version}_windows_amd64.zip' v1.0.1
-```
-
-The Windows exe gets version info, a manifest and the program icon embedded
-(`versioninfo.json`, `tsnmp.exe.manifest`, `assets/tsnmp.ico` →
-`resource_windows_*.syso`). Without version info and a manifest Defender is more
-likely to report a false positive (e.g. `Trojan:Win32/Wacatac.B!ml`). Regenerate
-after changing any of these files: `go generate`. Do not use `-ldflags="-s -w"`:
-a stripped exe looks more suspicious to antivirus software.
-
-### Testing without a real device
-
-```sh
-go run ./tools/fakeagent            # fake SNMP agent: 127.0.0.1:16161, community "public"
-./tsnmp 127.0.0.1:16161             # or without an address, on the login screen
-./tsnmp -v 3 -u tsnmp -A authpass123 -X privpass123 127.0.0.1:16161   # SNMPv3 (SHA/AES)
-```
-
-Flags: `-listen`, `-community`, `-extra` (number of additional interfaces, default 50),
-`-delay` (wait before every response, e.g. `50ms`, to simulate a slow device),
-`-refresh` (counters change only at this interval, e.g. `2s`, like a router's
-counter cache), `-hot` (a 10 Gb/s port with a constant 85% load), and for SNMPv3
-`-user` (default `tsnmp`; `""` turns SNMPv3 off), `-auth` / `-authpass` (default
-`SHA` / `authpass123`), `-priv` / `-privpass` (default `AES` / `privpass123`;
-`-auth none` or `-priv none` lowers the security level), `-context` (the only
-accepted context name, default: the default context). The agent answers v2c
-with the community and v3 with the user at the same time, and sends the SNMPv3
-error reports (unknown user, wrong password, wrong security level, unknown context)
-like a real device.
-Commands on standard input while running: `reset N` (zero the counters of
-ifIndex N), `reboot` (agent restart), `down` / `up` (connection lost /
-restored), `nodisc` / `disc` (stop / resume answering discovery requests).
+`checksums.txt` (SHA-256). The Windows exe is Authenticode-signed (Certum code signing
+certificate). `tsnmp -version` prints the version of the program.
 
 ## Usage
 
@@ -190,7 +146,7 @@ Bit/s and Packet/s panels (In = green, Out = blue, overlap = yellow), refreshed
 continuously. Besides the current value, the legend shows the minimum and maximum
 over the plotted period; `Esc` or a right click goes back to the list.
 
-## Notes
+## How it works
 
 - Uses the 64-bit `ifHC*` counters; if the device does not support them, it falls
   back per interface to the 32-bit `ifTable` counters automatically (with wrap handling).
@@ -210,6 +166,19 @@ over the plotted period; `Esc` or a right click goes back to the list.
 - All measured data stays in memory while the program runs, in compact form
   (20 bytes per measurement; 1000 interfaces at a 5 s poll take about 0.35 GB / day).
 
+## Building from source
+
+Requires Go 1.24+.
+
+```sh
+go build -trimpath -o tsnmp .                                  # Linux
+GOOS=windows GOARCH=amd64 go build -trimpath -o tsnmp.exe .    # Windows (cross-compiled)
+go test ./...
+```
+
+Testing without a real device (fake SNMP agent), CI, the Windows resources and the
+release process are described in [DEVELOPMENT.md](DEVELOPMENT.md).
+
 ## License
 
 MIT, see [LICENSE](LICENSE).
@@ -221,5 +190,4 @@ reserved. They may be used unmodified to refer to the tsnmp project.
 The licenses of the third-party software compiled into tsnmp (the Go standard library
 and the Go modules) are in [THIRD_PARTY_LICENSES.txt](THIRD_PARTY_LICENSES.txt). The
 program includes both texts: `tsnmp -licenses` prints them, and `l` in the help (`F1`)
-shows them. The file is generated: `go run ./tools/licenses -write` regenerates it,
-`go run ./tools/licenses` checks that it is up to date (CI runs the check).
+shows them.

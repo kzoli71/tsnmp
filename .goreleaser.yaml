@@ -24,8 +24,8 @@ archives:
     files:
       - LICENSE
       - THIRD_PARTY_LICENSES.txt
-      - Readme.md
-      - Readme.hu.md
+      - README.md
+      - README.hu.md
 
 checksum:
   name_template: checksums.txt
