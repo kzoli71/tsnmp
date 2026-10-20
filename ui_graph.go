@@ -73,13 +73,23 @@ func newGraphView(a *App) *GraphView {
 		}
 		return x + 1, y + 1, w - 2, h - 2
 	})
-	// Right click goes back to the list (unless a dialog is open on top).
+	// Right click goes back to the list, the wheel zooms (unless a dialog is
+	// open on top).
 	g.root.SetMouseCapture(func(action tview.MouseAction, ev *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
-		if page, _ := a.pages.GetFrontPage(); action == tview.MouseRightClick && page == "graph" {
-			a.closeGraph()
-			return action, nil
+		if page, _ := a.pages.GetFrontPage(); page != "graph" {
+			return action, ev
 		}
-		return action, ev
+		switch action {
+		case tview.MouseRightClick:
+			a.closeGraph()
+		case tview.MouseScrollUp:
+			g.wheelZoom(-1)
+		case tview.MouseScrollDown:
+			g.wheelZoom(1)
+		default:
+			return action, ev
+		}
+		return action, nil
 	})
 	return g
 }
@@ -151,6 +161,14 @@ func (g *GraphView) setZoom(idx int) {
 	g.lastPoints = newPoints
 }
 
+// wheelZoom zooms in (-1) or out (+1) by one level; unlike z / Z it stops at
+// the ends instead of wrapping around.
+func (g *GraphView) wheelZoom(step int) {
+	if idx := g.zoomIdx + step; idx >= 0 && idx < len(zoomLevels) {
+		g.setZoom(idx)
+	}
+}
+
 // handleKey processes graph navigation keys; it returns false for other keys.
 func (g *GraphView) handleKey(ev *tcell.EventKey) bool {
 	page := max(g.capacity-1, 1)
@@ -176,6 +194,8 @@ func (g *GraphView) handleKey(ev *tcell.EventKey) bool {
 		g.setZoom(g.zoomIdx + 1)
 	case ev.Rune() == 'Z':
 		g.setZoom(g.zoomIdx - 1)
+	case ev.Rune() == 'w' || ev.Rune() == 'W':
+		g.a.saveCSV(g.ifIndex)
 	default:
 		return false
 	}

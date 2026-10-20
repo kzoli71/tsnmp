@@ -210,3 +210,25 @@ func TestCellRuneFallback(t *testing.T) {
 		t.Fatalf("fallback: got %c", r)
 	}
 }
+
+func TestGraphWheelZoomStopsAtEnds(t *testing.T) {
+	a := &App{store: NewStore()}
+	a.store.UpdateInterfaces([]IfaceInfo{{Index: 1, Admin: 1, Oper: 1}})
+	a.store.ifaces[1].Hist = histN(10)
+	g := newGraphView(a)
+	g.show(1)
+	g.wheelZoom(-1)
+	if g.zoom() != 1 {
+		t.Errorf("zoom in at 1× gave %d×", g.zoom())
+	}
+	for i := 0; i < 5; i++ {
+		g.wheelZoom(1)
+	}
+	if g.zoom() != 120 {
+		t.Errorf("zoom out stopped at %d×, want 120×", g.zoom())
+	}
+	g.wheelZoom(-1)
+	if g.zoom() != 30 {
+		t.Errorf("zoom in from 120× gave %d×, want 30×", g.zoom())
+	}
+}
