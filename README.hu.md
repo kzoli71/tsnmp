@@ -36,7 +36,8 @@ Linuxon és Windows 10-en vagy újabbon fut, beleértve a Windows Server 2016-ot
 - Nincsenek hamis tüskék az eszköz újraindulása, a számlálók nullázása
   (`ifCounterDiscontinuityTime`) vagy egy valószínűtlen 32 bites átfordulás után.
 - Interfészenkénti forgalmi grafikon a terminálban, a teljes mérési előzmény
-  visszagörgetésével, nagyítással (átlagolással), minimum- és maximumértékekkel.
+  visszagörgetésével, nagyítással (átlagolással, egérgörgővel is), minimum- és
+  maximumértékekkel; a mért adatok CSV fájlba menthetők.
 - Hatékony lekérdezés: GetBulk kérések, 1–300 s lekérdezési időköz.
 - Egyetlen statikus bináris Linuxra és Windowsra, telepítés nélkül; a Windows exe
   kódaláírt.
@@ -84,7 +85,7 @@ Az `SNMP version` legördülő lista választja ki a mezőket:
 A parancssorban ugyanezek a kapcsolók: `-v`, `-c`, `-u`, `-a` / `-A`, `-x` / `-X`, `-n`
 (net-snmp stílusban; ha csak a jelszó van megadva, a protokoll alapértelmezése `SHA` / `AES`).
 A `tsnmp -licenses` kiírja a licenceket (lásd [Licenc](#licenc)), majd kilép;
-a `tsnmp -version` kiírja a verziót, majd kilép.
+a `tsnmp -version` kiírja a verziót, majd kilép (a súgó alján is látható).
 A parancssorban megadott jelszavakat a gép többi felhasználója is láthatja (folyamatlista):
 közös használatú gépen inkább a bejelentkező képernyőn add meg őket. A program az SNMPv3
 hibákat érthetően kiírja (pl. `authentication failed (wrong authentication password or protocol)`),
@@ -133,6 +134,8 @@ Grafikon nézet:
 | `Shift+←` / `Shift+→`, `PgUp` / `PgDn` | Görgetés fél / teljes képernyőnyit        |
 | `Home` / `End`                     | Élő nézet / legrégebbi mérés                  |
 | `z` / `Z`                          | Nagyítás váltása előre / vissza: 1× → 5× → 30× → 120× → 1× (pontonként ennyi mérés átlaga) |
+| Egérgörgő fel / le                 | Nagyítás / kicsinyítés (1×-nél és 120×-nál megáll) |
+| `w`                                | Az interfész összes mérésének mentése CSV fájlba |
 | `r` / `R`                          | Mérés újraindítása (megerősítéssel)           |
 | `Esc`, jobb kattintás              | Vissza a listához                             |
 
@@ -142,6 +145,14 @@ helyezkednek el, nem az idővel arányosan, így a lekérdezési időköz válto
 kimaradt lekérdezés után a címkék közötti idő eltérhet. A tengely vonalán látható a
 nagyítás mértéke, a látható időtartam, valamint visszagörgetett állapotban (ilyenkor a
 grafikon helyben marad, miközben a mérés folytatódik) a `◀ HISTORY` jelzés.
+
+A `w` az interfész minden mérését elmenti az indulás (vagy az utolsó újraindítás) óta,
+nem csak a látható részt, és átlagolás nélkül, egy új fájlba az aktuális könyvtárban:
+`tsnmp_<host>_<interfész>_<ÉÉÉÉHHNN-ÓÓPPMM>.csv` (a fájlnévben nem megengedett
+karakterek helyén `_` áll; meglévő fájlt sosem ír felül). Oszlopok: `time` (helyi idő,
+RFC 3339, pl. `2026-10-20T17:23:05+02:00`), `in_bps`, `out_bps`, `in_pps`, `out_pps`;
+vesszővel elválasztva, tizedesponttal. Mentés után megjelenik a fájl teljes útvonala.
+A tsnmp csak ekkor ír a lemezre.
 
 Bit/s és Packet/s panel (In = zöld, Out = kék, átfedés = sárga), folyamatosan frissül.
 A jelmagyarázat az aktuális érték mellett az ábrázolt időszak minimumát és maximumát is

@@ -104,8 +104,19 @@ func (a *App) loginView(st *loginState) tview.Primitive {
 		})
 		form.AddFormItem(f)
 	}
+	// Drop-downs show a ▼ after the value, so they look openable; the
+	// options are padded to the same width to keep the arrow in place.
 	dropDown := func(label string, options []string, current int, set func(int)) {
-		d := tview.NewDropDown().SetLabel(label).SetOptions(options, nil).SetCurrentOption(current)
+		w := 0
+		for _, o := range options {
+			w = max(w, len([]rune(o)))
+		}
+		padded := make([]string, len(options))
+		for i, o := range options {
+			padded[i] = o + strings.Repeat(" ", w-len([]rune(o)))
+		}
+		d := tview.NewDropDown().SetLabel(label).SetTextOptions("", "", "", " ▼", "").
+			SetOptions(padded, nil).SetCurrentOption(current)
 		d.SetSelectedFunc(func(_ string, i int) { set(i) }) // after SetCurrentOption: not called for it
 		form.AddFormItem(d)
 	}

@@ -45,6 +45,7 @@ type App struct {
 	licensesReturnFocus tview.Primitive // focus to restore when the licenses close
 	confirmReturnFocus  tview.Primitive // focus to restore when a confirmation is cancelled
 	confirmOK           func()          // action of the open confirmation
+	messageReturnFocus  tview.Primitive // focus to restore when a message closes
 }
 
 func main() {
@@ -231,7 +232,7 @@ func (a *App) closeGraph() {
 	a.app.SetFocus(a.main.table)
 }
 
-const helpText = `[yellow::b]Main screen[-::-]
+const helpBody = `[yellow::b]Main screen[-::-]
   ↑ / ↓, PgUp / PgDn, Home / End  move between interfaces
   Enter, mouse click              traffic graph of the interface
   + / -                           increase / decrease the poll interval
@@ -252,6 +253,8 @@ const helpText = `[yellow::b]Main screen[-::-]
   Shift+← / Shift+→, PgUp / PgDn  scroll by half / full screen
   Home / End                      live view / oldest measurement
   z / Z                           cycle zoom: 1× → 5× → 30× → 120× → 1×
+  mouse wheel up / down           zoom in / out
+  w                               save the measurements to a CSV file
   + / -                           increase / decrease the poll interval
   r / R                           restart the measurement (with confirmation)
   Esc, right click                back to the list
@@ -263,12 +266,18 @@ const helpText = `[yellow::b]Main screen[-::-]
 
 [gray]Close: Esc or F1, scroll: ↑ / ↓, l: licenses[-]
 
-Copyright (c) 2026 Zoltán Kiss, MIT License`
+`
+
+// helpText is the help page text, ending with the version and copyright.
+func helpText() string {
+	return helpBody + "tsnmp " + tview.Escape(version) + " · Copyright (c) 2026 Zoltán Kiss, MIT License"
+}
 
 func (a *App) showHelp() {
-	text := tview.NewTextView().SetDynamicColors(true).SetText(helpText)
+	help := helpText()
+	text := tview.NewTextView().SetDynamicColors(true).SetText(help)
 	text.SetBorder(true).SetTitle(" Help ")
-	box := &centered{Box: tview.NewBox(), child: text, w: 79, h: strings.Count(helpText, "\n") + 3}
+	box := &centered{Box: tview.NewBox(), child: text, w: 79, h: strings.Count(help, "\n") + 3}
 	a.helpReturnFocus = a.app.GetFocus()
 	a.pages.AddPage("help", box, true, true)
 	a.app.SetFocus(text)
@@ -334,6 +343,25 @@ func (a *App) closeConfirm() {
 	}
 }
 
+// message shows an information dialog; Enter or Esc closes it. The text is
+// plain (it may contain file names and error messages).
+func (a *App) message(text string) {
+	m := tview.NewModal().
+		SetText(tview.Escape(text)).
+		AddButtons([]string{"OK"}).
+		SetDoneFunc(func(int, string) { a.closeMessage() })
+	a.messageReturnFocus = a.app.GetFocus()
+	a.pages.AddPage("message", m, true, true)
+	a.app.SetFocus(m)
+}
+
+func (a *App) closeMessage() {
+	a.pages.RemovePage("message")
+	if a.messageReturnFocus != nil {
+		a.app.SetFocus(a.messageReturnFocus)
+	}
+}
+
 // confirmQuit asks before quitting: all measurements live only in memory.
 func (a *App) confirmQuit() {
 	a.confirm("Quit?\nAll measured data will be lost.", "Quit", a.app.Stop)
@@ -385,6 +413,9 @@ func (a *App) globalKeys(ev *tcell.EventKey) *tcell.EventKey {
 			return ev // scroll the help text
 		}
 		return nil
+	}
+	if page == "message" {
+		return ev // Enter, Esc: handled by the dialog
 	}
 	if page == "confirm" {
 		switch {

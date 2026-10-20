@@ -36,7 +36,8 @@ It runs on Linux and on Windows 10 or later, including Windows Server 2016 and l
 - No false spikes after a device restart, a counter reset (`ifCounterDiscontinuityTime`)
   or an implausible 32-bit wrap.
 - Traffic graph per interface in the terminal, with scrolling through the whole measurement
-  history, zoom (averaging) and minimum / maximum values.
+  history, zoom (averaging, also with the mouse wheel) and minimum / maximum values; the
+  measurements can be saved to a CSV file.
 - Efficient polling: GetBulk requests, poll interval 1–300 s.
 - A single static binary for Linux and Windows, nothing to install; the Windows exe is
   code-signed.
@@ -84,7 +85,7 @@ The `SNMP version` drop-down selects the fields:
 On the command line the same options are `-v`, `-c`, `-u`, `-a` / `-A`, `-x` / `-X`, `-n`
 (net-snmp style; with only a password given, the protocol defaults to `SHA` / `AES`).
 `tsnmp -licenses` prints the licenses (see [License](#license)) and exits;
-`tsnmp -version` prints the version and exits.
+`tsnmp -version` prints the version and exits (it is also shown at the bottom of the help).
 Passwords on the command line are visible to other users of the machine (process list):
 on a shared machine type them on the login screen instead. SNMPv3 errors are explained
 (e.g. `authentication failed (wrong authentication password or protocol)`), and the
@@ -132,6 +133,8 @@ Graph view:
 | `Shift+←` / `Shift+→`, `PgUp` / `PgDn` | Scroll by half / full screen              |
 | `Home` / `End`                     | Live view / oldest measurement                |
 | `z` / `Z`                          | Cycle zoom forward / back: 1× → 5× → 30× → 120× → 1× (that many measurements averaged per point) |
+| Mouse wheel up / down              | Zoom in / out (stops at 1× and 120×)          |
+| `w`                                | Save all measurements of the interface to a CSV file |
 | `r` / `R`                          | Restart the measurement (with confirmation)   |
 | `Esc`, right click                 | Back to the list                              |
 
@@ -141,6 +144,14 @@ measurement, not proportionally to time, so after a poll interval change or a mi
 poll the time between labels can differ. The axis line shows the zoom level, the
 time span in view and, when scrolled back (the graph then stays in place while
 measuring goes on), the `◀ HISTORY` marker.
+
+`w` saves every measurement of the interface since the start (or the last restart),
+not only the part in view and without averaging, into a new file in the current
+directory: `tsnmp_<host>_<interface>_<YYYYMMDD-HHMMSS>.csv` (characters not allowed in
+file names become `_`; an existing file is never overwritten). Columns: `time` (local
+time, RFC 3339, e.g. `2026-10-20T17:23:05+02:00`), `in_bps`, `out_bps`, `in_pps`,
+`out_pps`; comma separated, with a decimal point. The full path of the file is shown
+after saving. This is the only time tsnmp writes to the disk.
 
 Bit/s and Packet/s panels (In = green, Out = blue, overlap = yellow), refreshed
 continuously. Besides the current value, the legend shows the minimum and maximum
