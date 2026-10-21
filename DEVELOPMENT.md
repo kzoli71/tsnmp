@@ -62,6 +62,22 @@ after changing any of these files: `go generate`.
 
 ## Releasing
 
+`tools/release.sh` does all of the steps below, asking before each one (`-y`: without
+asking), and can be run again after a failure (finished steps are skipped). Run it on a
+clean `main` that matches both remotes; it needs `sign-release` on `PATH` (or its path in
+`SIGN_RELEASE`):
+
+```sh
+CERTUM_EMAIL=you@example.com tools/release.sh 1.0.2
+```
+
+It bumps `versioninfo.json`, runs `go generate` and the checks, merges the bump through
+a `release/vX.Y.Z` PR after green CI, pushes `main` to Gitea, tags the merged commit
+(signed tag, pushed to both remotes), waits for the draft release and runs
+`sign-release`. The SimplySign code is read only by `sign-release`.
+
+By hand:
+
 1. Update the version in `versioninfo.json` and run `go generate`; commit.
 2. Push a `v*` tag (e.g. `v1.0.1`). This runs `.github/workflows/release.yml`: after the
    checks, [GoReleaser](https://goreleaser.com/) (`.goreleaser.yaml`) builds the release
