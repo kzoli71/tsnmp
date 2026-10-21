@@ -5,11 +5,11 @@
 #   CERTUM_EMAIL=you@example.com tools/release.sh [-y] 1.2.3
 #
 # Steps (each one asks for confirmation unless -y is given):
-#   1. checks: clean main, in sync with github/main and origin/main (Gitea)
+#   1. checks: clean main, in sync with origin/main (GitHub)
 #   2. bumps versioninfo.json, runs go generate and the local checks
 #   3. commits the bump on release/vX.Y.Z, opens a PR, waits for green CI,
-#      squash-merges it and pushes main to Gitea
-#   4. tags the merged commit, pushes the tag to GitHub and Gitea, and waits
+#      and squash-merges it
+#   4. tags the merged commit, pushes the tag to GitHub, and waits
 #      for the release workflow to create the draft release
 #   5. runs sign-release, which asks for the SimplySign one-time code itself
 #      (this script never reads it), signs and verifies the exe and publishes
@@ -22,8 +22,7 @@
 set -euo pipefail
 
 repo=kzoli71/tsnmp
-gh_remote=github
-gitea_remote=origin
+gh_remote=origin
 
 usage() {
 	echo "usage: CERTUM_EMAIL=... ${0##*/} [-y] X.Y.Z" >&2
@@ -70,10 +69,8 @@ step "checking the repository"
 [[ $(git symbolic-ref --short HEAD) == main ]] || die "not on main"
 [[ -z $(git status --porcelain) ]] || die "the working tree is not clean"
 git fetch -q "$gh_remote" main --tags
-git fetch -q "$gitea_remote" main
 head=$(git rev-parse HEAD)
 [[ $head == $(git rev-parse "$gh_remote/main") ]] || die "main differs from $gh_remote/main"
-[[ $head == $(git rev-parse "$gitea_remote/main") ]] || die "main differs from $gitea_remote/main"
 
 if state=$(gh release view "$tag" -R "$repo" --json isDraft --jq .isDraft 2>/dev/null); then
 	[[ $state == true ]] || die "release $tag is already published"
@@ -127,7 +124,6 @@ if [[ $current != "$version" ]]; then
 	git branch -q -D "$branch"
 	git fetch -q "$gh_remote" main
 	git merge -q --ff-only "$gh_remote/main"
-	git push -q "$gitea_remote" main
 	git fetch -q "$gh_remote" --prune
 else
 	echo "versioninfo.json is already $version, skipping the bump"
@@ -141,13 +137,12 @@ if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
 	echo "tag $tag already exists"
 else
 	git log -1 --format='%h %s' "$commit"
-	confirm "Tag this commit $tag and push the tag to GitHub and Gitea?"
+	confirm "Tag this commit $tag and push the tag to GitHub?"
 	step "tagging"
 	git tag -s -m "tsnmp $tag" "$tag" "$commit"
 fi
-# Only this tag: archive/* must never reach GitHub.
+# Only this tag: the local archive/* tags must never reach GitHub.
 git push -q "$gh_remote" "refs/tags/$tag"
-git push -q "$gitea_remote" "refs/tags/$tag"
 
 if ! gh release view "$tag" -R "$repo" >/dev/null 2>&1; then
 	step "waiting for the release workflow"
